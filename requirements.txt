@@ -1,8 +1,23 @@
-streamlit
-torch
-torchvision
-torchaudio
-transformers
-torch-geometric
-Pillow
-numpy
+# Streamlit
+streamlit==1.25.0
+
+# Torch (CPU + GPU compatible)
+torch==2.1.0
+torchvision==0.16.1
+torchaudio==2.1.1
+
+# Transformers for CLIP
+transformers==4.41.0
+
+# Pillow for image handling
+Pillow==10.0.0
+
+# PyTorch Geometric core dependencies
+torch-scatter==3.9.1
+torch-sparse==0.6.18
+torch-cluster==1.6.2
+torch-spline-conv==1.2.2
+torch-geometric==2.3.0
+
+# Numpy (PyTorch dependency)
+numpy>=1.24.0
