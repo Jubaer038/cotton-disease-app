@@ -8,11 +8,14 @@ class CLIP_GCN_LearnableAdj(nn.Module):
     def __init__(self, num_classes, clip_feature_dim=512, gcn_hidden=256, dropout=0.3):
         super(CLIP_GCN_LearnableAdj, self).__init__()
 
+        # Linear layer to learn adjacency
         self.adj_learner = nn.Linear(clip_feature_dim, clip_feature_dim)
 
+        # GCN layers
         self.gcn1 = GCNConv(clip_feature_dim, gcn_hidden)
         self.gcn2 = GCNConv(gcn_hidden, gcn_hidden)
 
+        # BatchNorm
         self.bn1 = nn.BatchNorm1d(gcn_hidden)
         self.bn2 = nn.BatchNorm1d(gcn_hidden)
 
@@ -23,11 +26,11 @@ class CLIP_GCN_LearnableAdj(nn.Module):
         transformed = self.adj_learner(x)
         similarity = torch.mm(transformed, transformed.t())
 
+        # Single-node case
         if similarity.size(0) == 1:
             attention = torch.ones_like(similarity)
         else:
             attention = F.softmax(similarity, dim=-1)
-
         return attention
 
     def forward(self, x):
