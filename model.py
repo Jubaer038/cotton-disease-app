@@ -8,14 +8,11 @@ class CLIP_GCN_LearnableAdj(nn.Module):
     def __init__(self, num_classes, clip_feature_dim=512, gcn_hidden=256, dropout=0.3):
         super(CLIP_GCN_LearnableAdj, self).__init__()
 
-        # Linear layer to learn adjacency from features
         self.adj_learner = nn.Linear(clip_feature_dim, clip_feature_dim)
 
-        # Two GCN layers
         self.gcn1 = GCNConv(clip_feature_dim, gcn_hidden)
         self.gcn2 = GCNConv(gcn_hidden, gcn_hidden)
 
-        # BatchNorm layers
         self.bn1 = nn.BatchNorm1d(gcn_hidden)
         self.bn2 = nn.BatchNorm1d(gcn_hidden)
 
@@ -23,23 +20,17 @@ class CLIP_GCN_LearnableAdj(nn.Module):
         self.classifier = nn.Linear(gcn_hidden, num_classes)
 
     def learn_adjacency(self, x):
-        """
-        Learn adjacency matrix from features.
-        Handles single-node case safely.
-        """
         transformed = self.adj_learner(x)
         similarity = torch.mm(transformed, transformed.t())
 
-        if similarity.size(0) == 1:  # Single node
+        if similarity.size(0) == 1:
             attention = torch.ones_like(similarity)
         else:
             attention = F.softmax(similarity, dim=-1)
+
         return attention
 
     def forward(self, x):
-        """
-        Forward pass: learn adjacency → GCN layers → classifier
-        """
         learned_adj = self.learn_adjacency(x)
         edge_index, edge_weight = dense_to_sparse(learned_adj)
 
