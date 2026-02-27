@@ -17,7 +17,7 @@ st.title("🌿 Cotton Disease Classification (CLIP + GCN)")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # -----------------------------
-# Class Names (Must match training order)
+# Class Names
 # -----------------------------
 CLASS_NAMES = [
     "Alternaria Leaf",
@@ -33,24 +33,26 @@ CLASS_NAMES = [
 model_path = os.path.join(os.path.dirname(__file__), "best_clip_gcn_model.pth")
 
 # -----------------------------
-# Load CLIP (cached)
+# Load CLIP
 # -----------------------------
 @st.cache_resource
 def load_clip():
-    clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-    clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-    clip_model.eval()
-    return clip_model, clip_processor
+    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    model.to(device)
+    model.eval()
+    return model, processor
 
 clip_model, clip_processor = load_clip()
 
 # -----------------------------
-# Load GCN Model (cached)
+# Load GCN
 # -----------------------------
 @st.cache_resource
 def load_gcn():
     model = CLIP_GCN_LearnableAdj(num_classes=len(CLASS_NAMES))
     model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
     model.eval()
     return model
 
@@ -62,21 +64,26 @@ model = load_gcn()
 uploaded_file = st.file_uploader("Upload Cotton Leaf Image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
+
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    # -----------------------------
-    # CLIP Feature Extraction
-    # -----------------------------
+    # CLIP preprocessing
     inputs = clip_processor(images=image, return_tensors="pt")
+    inputs = {k: v.to(device) for k, v in inputs.items()}
 
+    # Extract features safely
     with torch.no_grad():
-        features = clip_model.get_image_features(pixel_values=inputs["pixel_values"])
+        features = clip_model.get_image_features(**inputs)
 
-    # -----------------------------
-    # Ensure 2D float tensor on device
-    # -----------------------------
-    features = features.float().to(device)  # shape [num_nodes, 512]
+    # ✅ SAFETY FIX (important)
+    if isinstance(features, tuple):
+        features = features[0]
+
+    if not isinstance(features, torch.Tensor):
+        features = torch.tensor(features)
+
+    features = features.float().to(device)
 
     # -----------------------------
     # Prediction
