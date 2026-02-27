@@ -73,10 +73,10 @@ if uploaded_file is not None:
     with torch.no_grad():
         features = clip_model.get_image_features(pixel_values=inputs["pixel_values"])
 
-    # Ensure proper shape and dtype
-    if features.dim() == 3:  # [batch, 1, 512]
-        features = features.squeeze(1)
-    features = features.float().to(device)  # float32 & device
+    # -----------------------------
+    # Ensure 2D float tensor on device
+    # -----------------------------
+    features = features.float().to(device)  # shape [num_nodes, 512]
 
     # -----------------------------
     # Prediction
