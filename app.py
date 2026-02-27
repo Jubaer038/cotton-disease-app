@@ -76,14 +76,14 @@ if uploaded_file is not None:
     with torch.no_grad():
         features = clip_model.get_image_features(**inputs)
 
-    # ✅ SAFETY FIX (important)
+    # -----------------------------
+    # SAFELY handle tuple or non-tensor
+    # -----------------------------
     if isinstance(features, tuple):
         features = features[0]
 
-    if not isinstance(features, torch.Tensor):
-        features = torch.tensor(features)
-
-    features = features.float().to(device)
+    # ensure tensor, float and correct device
+    features = features.to(device=device, dtype=torch.float)
 
     # -----------------------------
     # Prediction
